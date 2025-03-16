@@ -6,7 +6,10 @@ authors = ["Dêvid Teófilo"]
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "alembic>=1.15.1",
     "fastapi[standard]>=0.115.11",
+    "pydantic-settings>=2.8.1",
+    "sqlalchemy>=2.0.39",
 ]
 
 [dependency-groups]
