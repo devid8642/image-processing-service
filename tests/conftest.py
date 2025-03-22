@@ -8,13 +8,9 @@ from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.pool import StaticPool
 
+from image_processing_service.database import get_session
 from image_processing_service.main import app
 from image_processing_service.models import table_registry
-
-
-@pytest.fixture
-def client():
-    return TestClient(app)
 
 
 @pytest_asyncio.fixture
@@ -32,6 +28,18 @@ async def session():
 
     async with engine.begin() as conn:
         await conn.run_sync(table_registry.metadata.drop_all)
+
+
+@pytest.fixture
+def client(session):
+    def get_session_override():
+        return session
+
+    with TestClient(app) as client:
+        app.dependency_overrides[get_session] = get_session_override
+        yield client
+
+    app.dependency_overrides.clear()
 
 
 @contextmanager
