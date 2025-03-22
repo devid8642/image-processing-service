@@ -1,15 +1,16 @@
 from typing import Annotated
 
-from database import get_session
 from fastapi import APIRouter, Depends, HTTPException, status
-from schemas.auth_schemas import TokenSchema
-from schemas.user_schemas import UserCreateSchema
-from security import create_access_token
-from services.user_service import get_user_service
-from sqlalchemy.ext.asyncio import AsyncSession
+
+from image_processing_service.schemas.auth_schemas import TokenSchema
+from image_processing_service.schemas.user_schemas import UserCreateSchema
+from image_processing_service.security import create_access_token
+from image_processing_service.services.user_service import (
+    UserService,
+    get_user_service,
+)
 
 auth_router = APIRouter()
-Session = Annotated[AsyncSession, Depends(get_session)]
 
 
 @auth_router.post(
@@ -27,9 +28,10 @@ Session = Annotated[AsyncSession, Depends(get_session)]
     },
     response_model=TokenSchema,
 )
-async def register(user: UserCreateSchema, session: Session):
-    user_service = get_user_service(session)
-
+async def register(
+    user: UserCreateSchema,
+    user_service: Annotated[UserService, Depends(get_user_service)],
+):
     try:
         user = await user_service.create_user(user)
     except ValueError:

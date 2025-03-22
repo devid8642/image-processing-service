@@ -4,19 +4,20 @@ from zoneinfo import ZoneInfo
 from jwt import encode
 from pwdlib import PasswordHash
 
-SECRET_KEY = 'your-secret-key'  # Isso é provisório, vamos ajustar!
-ALGORITHM = 'HS256'
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+from image_processing_service.settings import settings
+
 pwd_context = PasswordHash.recommended()
 
 
 def create_access_token(data: dict):
     to_encode = data.copy()
     expire = datetime.now(tz=ZoneInfo('UTC')) + timedelta(
-        minutes=ACCESS_TOKEN_EXPIRE_MINUTES
+        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
     )
     to_encode.update({'exp': expire})
-    encoded_jwt = encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    encoded_jwt = encode(
+        to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
+    )
     return encoded_jwt
 
 

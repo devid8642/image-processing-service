@@ -1,8 +1,13 @@
-from models import User
-from schemas.user_schemas import UserCreateSchema
-from security import get_password_hash
+from typing import Annotated
+
+from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import select
+
+from image_processing_service.database import get_session
+from image_processing_service.models import User
+from image_processing_service.schemas.user_schemas import UserCreateSchema
+from image_processing_service.security import get_password_hash
 
 
 class UserService:
@@ -27,5 +32,7 @@ class UserService:
         return new_user
 
 
-def get_user_service(session: AsyncSession):
+def get_user_service(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> UserService:
     return UserService(session)

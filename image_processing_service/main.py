@@ -1,5 +1,6 @@
 from fastapi import FastAPI
-from routers.auth_router import auth_router
+
+from image_processing_service.routers.auth_router import auth_router
 
 app = FastAPI()
 
