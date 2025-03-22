@@ -6,6 +6,7 @@ authors = ["Dêvid Teófilo"]
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "aiofiles>=24.1.0",
     "alembic>=1.15.1",
     "fastapi[standard]>=0.115.11",
     "pwdlib[argon2]>=0.2.1",
