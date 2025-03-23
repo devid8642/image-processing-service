@@ -43,10 +43,7 @@ def test_jwt():
 
 @pytest.mark.asyncio
 async def test_get_current_user_success():
-    user = User(
-        username='validuser',
-        password='hashed'
-    )
+    user = User(username='validuser', password='hashed')
     token = fake_generate_token(user.username)
 
     user_service = MockUserService(user)

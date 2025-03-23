@@ -11,6 +11,8 @@ from sqlalchemy.pool import StaticPool
 from image_processing_service.database import get_session
 from image_processing_service.main import app
 from image_processing_service.models import table_registry
+from image_processing_service.utils.hashing import get_password_hash
+from tests.factories import UserFactory
 
 
 @pytest_asyncio.fixture
@@ -40,6 +42,30 @@ def client(session):
         yield client
 
     app.dependency_overrides.clear()
+
+
+@pytest_asyncio.fixture
+async def user(session):
+    password = 'testtest'
+    user = UserFactory(password=get_password_hash(password))
+
+    session.add(user)
+    await session.commit()
+    await session.refresh(user)
+
+    user.clean_password = password
+
+    return user
+
+
+@pytest_asyncio.fixture
+async def token(client, user):
+    response = client.post(
+        '/login',
+        data={'username': user.username, 'password': user.clean_password},
+    )
+
+    return response.json()['access_token']
 
 
 @contextmanager
