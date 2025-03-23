@@ -11,3 +11,4 @@ class ImageSchema(BaseModel):
     url: str
     uploaded_at: datetime
     user_id: int
+    original_image_id: int | None = None

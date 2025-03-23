@@ -4,6 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
 
 from image_processing_service.models import User
 from image_processing_service.schemas.image_schemas import ImageSchema
+from image_processing_service.schemas.image_transform_schemas import (
+    TransformationSchema,
+)
 from image_processing_service.security import get_current_user
 from image_processing_service.services.exceptions import (
     ImageSaveError,
@@ -57,3 +60,33 @@ async def upload_image(
         )
 
     return image
+
+
+@image_router.post(
+    '/images/{id}/transform',
+    response_model=ImageSchema,
+    responses={
+        status.HTTP_404_NOT_FOUND: {
+            'description': 'Image not found',
+            'content': {
+                'application/json': {'example': {'detail': 'Image not found'}}
+            },
+        },
+    },
+)
+async def transform_image(
+    id: int,
+    user: Annotated[User, Depends(get_current_user)],
+    image_service: Annotated[ImageService, Depends(get_image_service)],
+    transformations: TransformationSchema,
+):
+    image = await image_service.get_image_by_id_and_user(
+        image_id=id, user_id=user.id
+    )
+    if not image:
+        raise HTTPException(status_code=404, detail='Image not found')
+
+    transformed_image = await image_service.apply_transformations(
+        image, transformations
+    )
+    return transformed_image

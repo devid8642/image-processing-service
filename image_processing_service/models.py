@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 
 from sqlalchemy import DateTime, ForeignKey, func
 from sqlalchemy.orm import Mapped, mapped_column, registry
@@ -26,6 +27,9 @@ class Image:
     filename: Mapped[str]
     url: Mapped[str]
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
+    original_image_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey('images.id'), default=None
+    )
     uploaded_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), init=False, default=func.now()
     )
