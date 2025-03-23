@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -7,10 +9,13 @@ class Settings(BaseSettings):
     )
 
     DATABASE_URL: str
-    MIGRATIONS_DATABASE_URL: str # sync database url for alembic
+    MIGRATIONS_DATABASE_URL: str  # sync database url for alembic
     SECRET_KEY: str
     ALGORITHM: str = 'HS256'
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+
+    BASE_DIR: Path = Path(__file__).resolve().parent.parent
+    UPLOAD_DIR: Path = BASE_DIR / 'uploads'
 
 
 settings = Settings()

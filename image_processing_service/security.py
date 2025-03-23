@@ -15,7 +15,7 @@ from image_processing_service.services.user_service import (
 from image_processing_service.settings import settings
 
 pwd_context = PasswordHash.recommended()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl='token')
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl='login')
 
 
 def create_access_token(data: dict):
