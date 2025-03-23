@@ -9,6 +9,7 @@ dependencies = [
     "aiofiles>=24.1.0",
     "alembic>=1.15.1",
     "fastapi[standard]>=0.115.11",
+    "pillow>=11.1.0",
     "pwdlib[argon2]>=0.2.1",
     "pydantic-settings>=2.8.1",
     "pyjwt>=2.10.1",
