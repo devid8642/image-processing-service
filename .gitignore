@@ -174,3 +174,5 @@ poetry.toml
 pyrightconfig.json
 
 database.db
+
+uploads/
