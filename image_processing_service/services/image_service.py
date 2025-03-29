@@ -58,6 +58,19 @@ class ImageService:
             select(Image).where(Image.id == image_id, Image.user_id == user_id)
         )
         return result.scalar_one_or_none()
+    
+    async def get_images_for_user(
+        self, user_id: int, page: int, limit: int
+    ) -> list[Image]:
+        if page < 1 or limit < 1:
+            raise ValueError('Page and limit must be greater than 0.')
+
+        offset = (page - 1) * limit
+        result = await self.session.execute(
+            select(Image).filter(Image.user_id == user_id)
+            .offset(offset).limit(limit)
+        )
+        return result.scalars().all()
 
     async def apply_transformations(
         self, image: Image, options: TransformationSchema

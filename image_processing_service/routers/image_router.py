@@ -86,7 +86,74 @@ async def transform_image(
     if not image:
         raise HTTPException(status_code=404, detail='Image not found')
 
-    transformed_image = await image_service.apply_transformations(
-        image, transformations
-    )
+    try:
+        transformed_image = await image_service.apply_transformations(
+            image, transformations
+        )
+    except ImageSaveError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+        )
+
     return transformed_image
+
+
+@image_router.get(
+    '/images/{id}',
+    response_model=ImageSchema,
+    responses={
+        status.HTTP_404_NOT_FOUND: {
+            'description': 'Image not found',
+            'content': {
+                'application/json': {'example': {'detail': 'Image not found'}}
+            },
+        },
+    },
+)
+async def get_image(
+    id: int,
+    user: Annotated[User, Depends(get_current_user)],
+    image_service: Annotated[ImageService, Depends(get_image_service)],
+):
+    image = await image_service.get_image_by_id_and_user(
+        image_id=id, user_id=user.id
+    )
+    
+    if not image:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail='Image not found'
+        )
+
+    return image
+
+
+@image_router.get(
+    '/images',
+    response_model=list[ImageSchema],
+    responses={
+        status.HTTP_400_BAD_REQUEST: {
+            'description': 'Invalid pagination parameters',
+            'content': {
+                'application/json': {'example': {'detail': 'Invalid pagination parameters'}}
+            },
+        },
+    },
+)
+async def list_images(
+    user: Annotated[User, Depends(get_current_user)],
+    image_service: Annotated[ImageService, Depends(get_image_service)],
+    page: int = 1,
+    limit: int = 10,
+):
+    if page < 1 or limit < 1:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Invalid pagination parameters'
+        )
+    
+    images = await image_service.get_images_for_user(
+        user_id=user.id, page=page, limit=limit
+    )
+    return images
+
