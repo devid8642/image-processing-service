@@ -58,7 +58,7 @@ class ImageService:
             select(Image).where(Image.id == image_id, Image.user_id == user_id)
         )
         return result.scalar_one_or_none()
-    
+
     async def get_images_for_user(
         self, user_id: int, page: int, limit: int
     ) -> list[Image]:
@@ -67,8 +67,10 @@ class ImageService:
 
         offset = (page - 1) * limit
         result = await self.session.execute(
-            select(Image).filter(Image.user_id == user_id)
-            .offset(offset).limit(limit)
+            select(Image)
+            .filter(Image.user_id == user_id)
+            .offset(offset)
+            .limit(limit)
         )
         return result.scalars().all()
 
@@ -125,7 +127,7 @@ class ImageService:
                 filename=new_filename,
                 url=new_path,
                 user_id=image.user_id,
-                original_image_id=image.id
+                original_image_id=image.id,
             )
             self.session.add(new_image)
             await self.session.commit()

@@ -1,6 +1,15 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Request,
+    UploadFile,
+    status,
+)
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from image_processing_service.models import User
 from image_processing_service.schemas.image_schemas import ImageSchema
@@ -18,6 +27,7 @@ from image_processing_service.services.image_service import (
 )
 
 image_router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
 
 
 @image_router.post(
@@ -72,13 +82,31 @@ async def upload_image(
                 'application/json': {'example': {'detail': 'Image not found'}}
             },
         },
+        status.HTTP_429_TOO_MANY_REQUESTS: {
+            'description': 'Rate limit exceeded',
+            'content': {
+                'application/json': {
+                    'example': {'detail': 'Rate limit exceeded'}
+                }
+            },
+        },
+        status.HTTP_400_BAD_REQUEST: {
+            'description': 'Invalid transformation parameters',
+            'content': {
+                'application/json': {
+                    'example': {'detail': 'Invalid transformation parameters'}
+                }
+            },
+        },
     },
 )
+@limiter.limit('5/minute')
 async def transform_image(
     id: int,
     user: Annotated[User, Depends(get_current_user)],
     image_service: Annotated[ImageService, Depends(get_image_service)],
     transformations: TransformationSchema,
+    request: Request,
 ):
     image = await image_service.get_image_by_id_and_user(
         image_id=id, user_id=user.id
@@ -118,11 +146,10 @@ async def get_image(
     image = await image_service.get_image_by_id_and_user(
         image_id=id, user_id=user.id
     )
-    
+
     if not image:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail='Image not found'
+            status_code=status.HTTP_404_NOT_FOUND, detail='Image not found'
         )
 
     return image
@@ -135,7 +162,9 @@ async def get_image(
         status.HTTP_400_BAD_REQUEST: {
             'description': 'Invalid pagination parameters',
             'content': {
-                'application/json': {'example': {'detail': 'Invalid pagination parameters'}}
+                'application/json': {
+                    'example': {'detail': 'Invalid pagination parameters'}
+                }
             },
         },
     },
@@ -149,11 +178,10 @@ async def list_images(
     if page < 1 or limit < 1:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail='Invalid pagination parameters'
+            detail='Invalid pagination parameters',
         )
-    
+
     images = await image_service.get_images_for_user(
         user_id=user.id, page=page, limit=limit
     )
     return images
-
