@@ -14,6 +14,7 @@ dependencies = [
     "pydantic-settings>=2.8.1",
     "pyjwt>=2.10.1",
     "python-multipart>=0.0.20",
+    "slowapi>=0.1.9",
     "sqlalchemy>=2.0.39",
 ]
 
