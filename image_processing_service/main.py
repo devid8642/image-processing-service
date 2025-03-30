@@ -14,7 +14,12 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    title='Image Processing Service',
+    description='A service for processing images',
+    version='1.0.0',
+    lifespan=lifespan
+)
 
 app.include_router(auth_router, tags=['auth'])
 app.include_router(image_router, tags=['image'])
