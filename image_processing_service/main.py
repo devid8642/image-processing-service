@@ -18,7 +18,7 @@ app = FastAPI(
     title='Image Processing Service',
     description='A service for processing images',
     version='1.0.0',
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 app.include_router(auth_router, tags=['auth'])

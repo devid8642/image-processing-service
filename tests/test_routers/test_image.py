@@ -120,7 +120,7 @@ def test_transform_image_success(
 
     response = client.post(
         f'/images/{image_id}/transform',
-        json={"rotate": 90, "format": "png"},
+        json={'rotate': 90, 'format': 'png'},
         headers={'Authorization': f'Bearer {token}'},
     )
 
@@ -133,7 +133,7 @@ def test_transform_image_success(
 def test_transform_image_not_found(client: TestClient, token: str):
     response = client.post(
         '/images/999999/transform',
-        json={"rotate": 45},
+        json={'rotate': 45},
         headers={'Authorization': f'Bearer {token}'},
     )
 
@@ -146,7 +146,7 @@ def test_transform_image_invalid_data(
 ):
     response = client.post(
         f'/images/{image_id}/transform',
-        json={"rotate": "not_a_number"},
+        json={'rotate': 'not_a_number'},
         headers={'Authorization': f'Bearer {token}'},
     )
 
