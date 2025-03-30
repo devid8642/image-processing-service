@@ -1,3 +1,4 @@
+import os
 from typing import Annotated
 
 from fastapi import (
@@ -8,6 +9,7 @@ from fastapi import (
     UploadFile,
     status,
 )
+from fastapi.responses import FileResponse
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
@@ -180,3 +182,48 @@ async def list_images(
         user_id=user.id, page=page, limit=limit
     )
     return images
+
+
+@image_router.get(
+    '/images/{id}/download',
+    response_class=FileResponse,
+    responses={
+        status.HTTP_404_NOT_FOUND: {
+            'description': 'Image not found',
+            'content': {
+                'application/json': {'example': {'detail': 'Image not found'}}
+            },
+        },
+        status.HTTP_202_ACCEPTED: {
+            'description': 'Transformation in progress',
+            'content': {
+                'application/json': {
+                    'example': {'detail': 'Transformations in progress.'}
+                }
+            },
+        },
+    },
+)
+async def download_image(
+    id: int,
+    user: Annotated[User, Depends(get_current_user)],
+    image_service: Annotated[ImageService, Depends(get_image_service)],
+):
+    image = await image_service.get_image_by_id_and_user(
+        image_id=id, user_id=user.id
+    )
+
+    if not image:
+        raise HTTPException(status_code=404, detail='Image not found')
+
+    if not os.path.exists(image.url):
+        raise HTTPException(
+            status_code=status.HTTP_202_ACCEPTED,
+            detail='Transformations in progress.',
+        )
+
+    return FileResponse(
+        path=image.url,
+        media_type='application/octet-stream',
+        filename=image.filename,
+    )
