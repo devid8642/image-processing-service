@@ -151,3 +151,44 @@ def test_transform_image_invalid_data(
     )
 
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
+def test_download_image_success(
+    client: TestClient,
+    token: str,
+    image_id: int,
+):
+    response = client.get(
+        f'/images/{image_id}/download',
+        headers={'Authorization': f'Bearer {token}'},
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    assert 'attachment' in response.headers.get('content-disposition', '')
+
+
+def test_download_image_not_found(client: TestClient, token: str):
+    response = client.get(
+        '/images/999999/download',
+        headers={'Authorization': f'Bearer {token}'},
+    )
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.json()['detail'] == 'Image not found'
+
+
+def test_download_image_file_not_ready(
+    monkeypatch: pytest.MonkeyPatch,
+    client: TestClient,
+    token: str,
+    image_id: int,
+):
+    monkeypatch.setattr('os.path.exists', lambda path: False)
+
+    response = client.get(
+        f'/images/{image_id}/download',
+        headers={'Authorization': f'Bearer {token}'},
+    )
+
+    assert response.status_code == status.HTTP_202_ACCEPTED
+    assert response.json()['detail'] == 'Transformations in progress.'

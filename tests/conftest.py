@@ -70,13 +70,16 @@ async def token(client, user):
 
 
 @pytest_asyncio.fixture
-async def image_id(session, user) -> int:
+async def image_id(session, user, tmp_path) -> int:
+    image_filename = f'{uuid.uuid4()}.png'
+    image_path = tmp_path / image_filename
+    image_path.write_bytes(b'fake image content')
+
     image = Image(
         filename='test_image.png',
-        url=f'/fake/path/{uuid.uuid4()}.png',
+        url=str(image_path),
         user_id=user.id,
     )
-
     session.add(image)
     await session.commit()
     await session.refresh(image)
