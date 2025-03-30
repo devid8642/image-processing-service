@@ -70,3 +70,84 @@ def test_upload_fails_on_save(
 
     assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
     assert response.json()['detail'] == 'Error while saving the image.'
+
+
+def test_get_image_success(client: TestClient, token: str, image_id: int):
+    response = client.get(
+        f'/images/{image_id}', headers={'Authorization': f'Bearer {token}'}
+    )
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data['id'] == image_id
+    assert 'filename' in data
+    assert 'url' in data
+
+
+def test_get_image_not_found(client: TestClient, token: str):
+    response = client.get(
+        '/images/999999', headers={'Authorization': f'Bearer {token}'}
+    )
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.json()['detail'] == 'Image not found'
+
+
+def test_list_images_success(client: TestClient, token: str):
+    response = client.get(
+        '/images?page=1&limit=5', headers={'Authorization': f'Bearer {token}'}
+    )
+    assert response.status_code == status.HTTP_200_OK
+    assert isinstance(response.json(), list)
+
+
+def test_list_images_invalid_pagination(client: TestClient, token: str):
+    response = client.get(
+        '/images?page=0&limit=10', headers={'Authorization': f'Bearer {token}'}
+    )
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json()['detail'] == 'Invalid pagination parameters'
+
+
+def test_transform_image_success(
+    monkeypatch: pytest.MonkeyPatch,
+    client: TestClient,
+    token: str,
+    image_id: int,
+):
+    monkeypatch.setattr(
+        'image_processing_service.services.image_service.apply_transformations_async.delay',
+        lambda *args, **kwargs: None,
+    )
+
+    response = client.post(
+        f'/images/{image_id}/transform',
+        json={"rotate": 90, "format": "png"},
+        headers={'Authorization': f'Bearer {token}'},
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert 'filename' in data
+    assert data['original_image_id'] == image_id
+
+
+def test_transform_image_not_found(client: TestClient, token: str):
+    response = client.post(
+        '/images/999999/transform',
+        json={"rotate": 45},
+        headers={'Authorization': f'Bearer {token}'},
+    )
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.json()['detail'] == 'Image not found'
+
+
+def test_transform_image_invalid_data(
+    client: TestClient, token: str, image_id: int
+):
+    response = client.post(
+        f'/images/{image_id}/transform',
+        json={"rotate": "not_a_number"},
+        headers={'Authorization': f'Bearer {token}'},
+    )
+
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY

@@ -1,3 +1,4 @@
+import uuid
 from contextlib import contextmanager
 from datetime import datetime
 
@@ -10,7 +11,7 @@ from sqlalchemy.pool import StaticPool
 
 from image_processing_service.database import get_session
 from image_processing_service.main import app
-from image_processing_service.models import table_registry
+from image_processing_service.models import Image, table_registry
 from image_processing_service.utils.hashing import get_password_hash
 from tests.factories import UserFactory
 
@@ -66,6 +67,21 @@ async def token(client, user):
     )
 
     return response.json()['access_token']
+
+
+@pytest_asyncio.fixture
+async def image_id(session, user) -> int:
+    image = Image(
+        filename='test_image.png',
+        url=f'/fake/path/{uuid.uuid4()}.png',
+        user_id=user.id,
+    )
+
+    session.add(image)
+    await session.commit()
+    await session.refresh(image)
+
+    return image.id
 
 
 @contextmanager
