@@ -77,4 +77,4 @@ task test
 - **image_processing_service/celery.py**: Configuration for Celery and RabbitMQ.
 - **image_processing_service/settings.py**: Configuration for the application (e.g., database URL, secret key).
 - **image_processing_service/schemas/**: Pydantic schemas for validating data.
-- **image_processing_service/uploads/**: Directory for storing uploaded images.
+- **uploads/**: Directory for storing uploaded images.
