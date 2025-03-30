@@ -4,8 +4,6 @@ from typing import Annotated
 
 import aiofiles
 from fastapi import Depends, UploadFile
-from PIL import Image as PILImage
-from PIL import ImageOps
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import select
 
@@ -19,6 +17,7 @@ from image_processing_service.services.exceptions import (
     InvalidImageError,
 )
 from image_processing_service.settings import settings
+from image_processing_service.tasks import apply_transformations_async
 
 
 class ImageService:
@@ -77,66 +76,30 @@ class ImageService:
     async def apply_transformations(
         self, image: Image, options: TransformationSchema
     ) -> Image:
-        original_path = image.url
-        try:
-            pil_image = PILImage.open(original_path)
+        original_image_path = image.url
+        format_ext = options.format or 'jpeg'
+        new_filename = f'{uuid.uuid4()}.{format_ext.lower()}'
+        new_image_path = os.path.join(settings.UPLOAD_DIR, new_filename)
 
-            if options.resize:
-                pil_image = pil_image.resize((
-                    options.resize.width,
-                    options.resize.height,
-                ))
+        new_image = Image(
+            filename=new_filename,
+            url=new_image_path,
+            user_id=image.user_id,
+            original_image_id=image.id,
+        )
+        self.session.add(new_image)
+        await self.session.commit()
+        await self.session.refresh(new_image)
 
-            if options.crop:
-                box = (
-                    options.crop.x,
-                    options.crop.y,
-                    options.crop.x + options.crop.width,
-                    options.crop.y + options.crop.height,
-                )
-                pil_image = pil_image.crop(box)
+        apply_transformations_async.delay(
+            original_image_path=original_image_path,
+            new_image_path=new_image_path,
+            transformations=options.model_dump(
+                exclude_unset=True, mode='json'
+            ),
+        )
 
-            if options.rotate:
-                pil_image = pil_image.rotate(options.rotate, expand=True)
-
-            if options.filters:
-                if options.filters.grayscale:
-                    pil_image = ImageOps.grayscale(pil_image)
-                if options.filters.sepia:
-                    sepia = PILImage.new('RGB', pil_image.size)
-                    pixels = pil_image.convert('RGB').load()
-                    for y in range(pil_image.size[1]):
-                        for x in range(pil_image.size[0]):
-                            r, g, b = pixels[x, y]
-                            tr = int(0.393 * r + 0.769 * g + 0.189 * b)
-                            tg = int(0.349 * r + 0.686 * g + 0.168 * b)
-                            tb = int(0.272 * r + 0.534 * g + 0.131 * b)
-                            sepia.putpixel(
-                                (x, y),
-                                (min(tr, 255), min(tg, 255), min(tb, 255)),
-                            )
-                    pil_image = sepia
-
-            # Convert format
-            format_ext = options.format or 'jpeg'
-            new_filename = f'{uuid.uuid4()}.{format_ext.lower()}'
-            new_path = os.path.join(settings.UPLOAD_DIR, new_filename)
-            pil_image.save(new_path, format=format_ext.upper())
-
-            new_image = Image(
-                filename=new_filename,
-                url=new_path,
-                user_id=image.user_id,
-                original_image_id=image.id,
-            )
-            self.session.add(new_image)
-            await self.session.commit()
-            await self.session.refresh(new_image)
-
-            return new_image
-
-        except Exception as e:
-            raise ImageSaveError(f'Error applying transformations: {str(e)}')
+        return new_image
 
 
 def get_image_service(

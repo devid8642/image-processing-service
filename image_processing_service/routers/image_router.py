@@ -114,16 +114,11 @@ async def transform_image(
     if not image:
         raise HTTPException(status_code=404, detail='Image not found')
 
-    try:
-        transformed_image = await image_service.apply_transformations(
-            image, transformations
-        )
-    except ImageSaveError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        )
+    new_image = await image_service.apply_transformations(
+        image, transformations
+    )
 
-    return transformed_image
+    return new_image
 
 
 @image_router.get(
