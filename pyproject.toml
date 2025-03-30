@@ -8,6 +8,7 @@ requires-python = ">=3.12"
 dependencies = [
     "aiofiles>=24.1.0",
     "alembic>=1.15.1",
+    "celery>=5.4.0",
     "fastapi[standard]>=0.115.11",
     "pillow>=11.1.0",
     "pwdlib[argon2]>=0.2.1",
@@ -51,6 +52,7 @@ lint = 'ruff check'
 pre_format = 'ruff check --fix'
 format = 'ruff format'
 run = 'fastapi dev image_processing_service/main.py'
+celery = 'celery -A image_processing_service.celery worker --loglevel=INFO'
 pre_test = 'task lint'
 test = 'pytest -s -x --cov=image_processing_service -vv'
 post_test = 'coverage html'
