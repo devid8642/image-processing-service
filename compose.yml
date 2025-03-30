@@ -1,0 +1,46 @@
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: image-processing-service
+    env_file:
+      - .env
+    entrypoint: /bin/sh start.sh
+    depends_on:
+      - rabbitmq
+    ports:
+      - "8000:8000"
+    networks:
+      - app-network
+
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: celery-worker
+    env_file:
+      - .env
+    depends_on:
+      - rabbitmq
+    entrypoint: celery -A image_processing_service.celery worker --loglevel=info
+    networks:
+      - app-network
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

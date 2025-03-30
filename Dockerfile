@@ -30,6 +30,11 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 ENV PYTHONPATH=/app
 
 COPY ./pyproject.toml ./uv.lock ./alembic.ini /app/
+COPY ./migrations /app/migrations
+
+COPY ./start.sh /app/
+
+RUN chmod +x /app/start.sh
 
 COPY ./image_processing_service /app/image_processing_service
 
@@ -38,4 +43,4 @@ COPY ./image_processing_service /app/image_processing_service
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync
 
-CMD ["fastapi", "run", "--workers", "4", "image_processing_service/main.py"]
+CMD ["./start.sh"]
